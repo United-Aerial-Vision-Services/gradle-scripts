@@ -9,18 +9,17 @@ buildscript {
     }
 }
 
-apply plugin: com.github.spotbugs.SpotBugsPlugin
-
-spotbugs {
-    toolVersion = '3.1.12'
-    sourceSets = [sourceSets.main]
-    effort = 'max'
-    reportLevel = 'high'
+plugins {
+    id 'com.github.spotbugs' version '4.7.0'
+    id 'java'
 }
 
-spotbugsMain {
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    toolVersion = '4.2.3'
+    effort = 'max'
+    reportLevel = 'high'
     reports {
-        html.enabled(true)
-        xml.enabled(false)
+        html.enabled = true
+        xml.enabled = false
     }
 }
