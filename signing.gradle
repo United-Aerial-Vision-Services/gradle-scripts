@@ -1,0 +1,19 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+apply plugin: 'signing'
+
+def signingKey = project.findProperty('gpgPrivateKey')
+def signingPassword = project.findProperty('gpgPassphrase')
+
+if(signingKey && signingPassword) {
+    signing {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications
+    }
+}

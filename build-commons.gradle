@@ -1,0 +1,23 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+task resolveDependencies {
+    doLast {
+        rootProject.allprojects { project ->
+            project.buildscript.configurations.forEach { configuration ->
+                if (configuration.isCanBeResolved()) {
+                    configuration.resolve()
+                }
+            }
+
+            project.configurations.forEach { configuration ->
+                if (configuration.isCanBeResolved()) {
+                    configuration.resolve()
+                }
+            }
+        }
+    }
+}

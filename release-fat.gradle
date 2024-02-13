@@ -1,0 +1,110 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:5.2.0"
+        classpath "net.researchgate:gradle-release:2.8.1"
+    }
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'java'
+apply plugin: com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
+apply plugin: net.researchgate.release.ReleasePlugin
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+javadoc {
+    failOnError = false
+}
+
+def pomConfig = {
+    url "https://github.com/United-Aerial-Vision-Services/${project.name}"
+    packaging 'jar'
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            name 'Weston Dunn'
+            email 'support@unitedaerialvisionservices.com'
+            organization 'United Aerial Vision Services LLC.'
+            organizationUrl 'http://www.unitedaerialvisionservices.com'
+        }
+    }
+    scm {
+        connection "scm:git:https://github.com/United-Aerial-Vision-Services/${project.name}.git"
+        developerConnection "scm:git:ssh://git@github.com:United-Aerial-Vision-Services/${project.name}.git"
+        url "https://github.com/United-Aerial-Vision-Services/${project.name}/tree/main"
+    }
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+    archives shadowJar
+}
+
+project.ext.githubUserName = project.hasProperty('githubUserName') ? githubUserName : ""
+project.ext.githubToken = project.hasProperty('githubToken') ? githubToken : ""
+project.ext.publishRepo = project.hasProperty('publishRepo') ? publishRepo : ""
+
+publishing {
+    repositories {
+        maven {
+            name = "Github"
+            url = uri(publishRepo)
+            credentials {
+                username = githubUserName
+                password = githubToken
+            }
+        }
+    }
+
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
+
+            artifact project.tasks.javadocJar
+            artifact project.tasks.sourcesJar
+
+            pom {
+                name = "${project.name}"
+                description = "${project.description}"
+            }
+
+            pom.withXml {
+                def root = asNode()
+                root.dependencies.'*'.findAll() {
+                    it.scope.text() == 'runtime' && project.configurations.shadow.allDependencies.find { dep ->
+                        dep.name == it.artifactId.text()
+                    }
+                }.each() {
+                    it.scope*.value = 'compile'
+                }
+                root.children().last() + pomConfig
+            }
+
+            groupId 'com.unitedaerialvisionservices.uavs'
+            artifactId "$project.name"
+
+        }
+    }
+}
+
+afterReleaseBuild.dependsOn publish

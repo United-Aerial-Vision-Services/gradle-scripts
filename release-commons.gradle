@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "net.researchgate:gradle-release:2.8.1"
+    }
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'java'
+apply plugin: net.researchgate.release.ReleasePlugin
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+    getArchiveClassifier().set('sources')
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    getArchiveClassifier().set('javadoc')
+}
+
+javadoc {
+    failOnError = false
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+def pomConfig = {
+    url "https://github.com/United-Aerial-Vision-Services/${project.name}"
+    packaging 'jar'
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            name 'Weston Dunn'
+            email 'support@unitedaerialvisionservices.com'
+            organization 'United Aerial Vision Services LLC.'
+            organizationUrl 'http://www.unitedaerialvisionservices.com'
+        }
+    }
+    scm {
+        connection "scm:git:https://github.com/United-Aerial-Vision-Services/${project.name}.git"
+        developerConnection "scm:git:ssh://git@github.com:United-Aerial-Vision-Services/${project.name}.git"
+        url "https://github.com/United-Aerial-Vision-Services/${project.name}/tree/main"
+    }
+}
+
+project.ext.githubUserName = project.hasProperty('githubUserName') ? githubUserName : ""
+project.ext.githubToken = project.hasProperty('githubToken') ? githubToken : ""
+project.ext.publishRepo = project.hasProperty('publishRepo') ? publishRepo : ""
+
+publishing {
+    repositories {
+        maven {
+            name = "Github"
+            url = uri(publishRepo)
+            credentials {
+                username = githubUserName
+                password = githubToken
+            }
+        }
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId 'com.unitedaerialvisionservices.uavs'
+            artifactId "$project.name"
+
+            pom {
+                name = "${project.name}"
+                description = "${project.description}"
+            }
+
+            pom.withXml {
+                def root = asNode()
+                root.children().last() + pomConfig
+            }
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+
+}
+
+afterReleaseBuild.dependsOn publish
