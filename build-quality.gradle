@@ -8,19 +8,3 @@ buildscript {
         classpath "com.github.spotbugs.snom:spotbugs-gradle-plugin:6.0.7"
     }
 }
-
-apply plugin: "com.github.spotbugs"
-
-spotbugs {
-    toolVersion = '6.0.7'
-    sourceSets = [sourceSets.main]
-    effort = 'max'
-    reportLevel = 'high'
-}
-
-spotbugsMain {
-    reports {
-        html.enabled = true
-        xml.enabled = false
-    }
-}
